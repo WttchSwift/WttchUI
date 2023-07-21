@@ -76,7 +76,7 @@ public struct SearchableCustomPicker<T: Hashable & Identifiable, Content: View, 
                         createContent(nil as T?)
                         ForEach(data, content: { createContent($0) })
                     }
-                    .padding(.horizontal)
+                    .padding()
                 }
                 // 弹窗最大高度
                 .frame(maxHeight: 400)
