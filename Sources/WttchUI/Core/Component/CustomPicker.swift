@@ -82,20 +82,6 @@ public struct CustomPicker<T: Hashable & Identifiable, SelectionContent: View, C
 }
 
 struct SwiftUIView_Previews: PreviewProvider {
-    struct Data: Identifiable, Hashable {
-        var id: Int
-        
-        var hashValue: Int {
-            return id.hashValue
-        }
-        
-        func hash(into hasher: inout Hasher) {
-            hasher.combine(id)
-        }
-    }
-    
-    static let datas: [Data] = [Data(id: 1), Data(id: 2), Data(id: 3)]
-    
     static var previews: some View {
         VStack {
             GeometryReader { geo in
