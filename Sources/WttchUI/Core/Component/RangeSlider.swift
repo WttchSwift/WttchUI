@@ -1,5 +1,5 @@
 //
-//  SwiftUIView.swift
+//  RangeSlider.swift
 //  
 //
 //  Created by Wttch on 2023/7/12.
