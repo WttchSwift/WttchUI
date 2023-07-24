@@ -23,11 +23,14 @@ public struct SearchableCustomPicker<T: Hashable & Identifiable, Content: View, 
     private var label: Label
     // 是否展示选项弹框
     @State private var showPopover: Bool = false
-    
-    @StateObject private var vm: SearchableCustomPickerViewModel
+    // 搜索文本
+    @State private var searchText: String = ""
+    private let searchTextPublisher = PassthroughSubject<String, Never>()
     @FocusState private var textFieldFocus: Bool
     // placehold
     private var title: (T?) -> String
+    private var searchCallback: (String) -> Void
+    private var dataSource: () -> Void
     
     /// 默认构造函数
     /// - Parameters:
@@ -40,13 +43,15 @@ public struct SearchableCustomPicker<T: Hashable & Identifiable, Content: View, 
                 data: [T], selection: Binding<T?>,
                 @ViewBuilder content: @escaping (T?) -> Content,
                 @ViewBuilder label: () -> Label,
-                searchCallback: @escaping (String) -> Void) {
+                searchCallback: @escaping (String) -> Void,
+                dataSource: @escaping () -> Void = {}) {
         self.title = title
         self.data = data
         self._selection = selection
         self.content = content
         self.label = label()
-        self._vm = StateObject(wrappedValue: SearchableCustomPickerViewModel(searchCallback))
+        self.dataSource = dataSource
+        self.searchCallback = searchCallback
     }
     
     public var body: some View {
@@ -55,11 +60,14 @@ public struct SearchableCustomPicker<T: Hashable & Identifiable, Content: View, 
             label
             
             ZStack {
-                TextField(title(selection), text: $vm.searchText)
+                TextField(title(selection), text: $searchText)
                     .textFieldStyle(.roundedBorder)
                     .focused($textFieldFocus)
                     .onChange(of: textFieldFocus) { newValue in
                         showPopover = newValue
+                        if newValue {
+                            dataSource()
+                        }
                     }
                 HStack {
                     Spacer()
@@ -78,10 +86,15 @@ public struct SearchableCustomPicker<T: Hashable & Identifiable, Content: View, 
                     }
                     .padding()
                 }
-                // 弹窗最大高度
-                .frame(maxHeight: 400)
+                .frame(width: 400, height: 600)
             })
         }
+        .onChange(of: searchText, perform: { newValue in
+            searchTextPublisher.send(newValue)
+        })
+        .onReceive(searchTextPublisher.debounce(for: .seconds(1), scheduler: DispatchQueue.main), perform: { newValue in
+            searchCallback(newValue)
+        })
     }
     
     // 生成选项视图
@@ -94,22 +107,6 @@ public struct SearchableCustomPicker<T: Hashable & Identifiable, Content: View, 
                 }
                 textFieldFocus.toggle()
             }
-    }
-}
-
-
-/// 包装 searchText 只是为了 debounce 去抖动
-fileprivate class SearchableCustomPickerViewModel: ObservableObject {
-    @Published var searchText: String = ""
-    private var anyCancellables: [AnyCancellable] = []
-    
-    
-    init(_ callback: @escaping (String) -> Void) {
-        $searchText.debounce(for: .seconds(1), scheduler: DispatchQueue.main)
-            .sink { value in
-                callback(value)
-            }
-            .store(in: &anyCancellables)
     }
 }
 

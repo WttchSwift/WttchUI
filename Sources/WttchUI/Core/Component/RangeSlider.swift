@@ -8,7 +8,7 @@
 import SwiftUI
 
 public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, ValueLabel : View, V: BinaryFloatingPoint, V.Stride: BinaryFloatingPoint {
-    private var value: Binding<ClosedRange<V>>
+    @Binding private var value: ClosedRange<V>
     private let bounds: ClosedRange<V>
     private let label: () -> Label
     private let minLabel: () -> ValueLabel
@@ -40,7 +40,7 @@ public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, Value
         @ViewBuilder maximumValueLabel: @escaping () -> ValueLabel,
         onEditingChanged: @escaping (Bool) -> Void = { _ in }
     ) {
-        self.value = value
+        self._value = value
         self.bounds = bounds
         
         self.label = label
@@ -90,9 +90,9 @@ public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, Value
             .onTapGesture(
                 coordinateSpace: .named(axleCoordinateSpaceName),
                 perform: { value in
-                    let lower = min(self.value.wrappedValue.lowerBound, bounds.value(percent: value.x / proxy.size.width))
-                    let upper = max(self.value.wrappedValue.upperBound, bounds.value(percent: value.x / proxy.size.width))
-                    self.value.wrappedValue = lower...upper
+                    let lower = min(self.value.lowerBound, bounds.value(percent: value.x / proxy.size.width))
+                    let upper = max(self.value.upperBound, bounds.value(percent: value.x / proxy.size.width))
+                    self.value = lower...upper
             })
     }
     
@@ -131,11 +131,11 @@ public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, Value
     // MARK: 属性计算
     // 小值百分比
     private var lowerPercent: CGFloat {
-        return bounds.percent(value: value.wrappedValue.lowerBound)
+        return bounds.percent(value: value.lowerBound)
     }
     // 大值百分比
     private var upperPercent: CGFloat {
-        return bounds.percent(value: value.wrappedValue.upperBound)
+        return bounds.percent(value: value.upperBound)
     }
     // 小值游标位置
     private func minPosition(_ proxy: GeometryProxy) -> CGFloat {
@@ -156,9 +156,9 @@ public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, Value
         let percent: CGFloat = max(value, 0) / proxy.size.width
         let newValue = bounds.value(percent: percent)
         // 不能超过大值 百分比
-        let lowerBound = min(newValue, self.value.wrappedValue.upperBound)
-        let upperBound = self.value.wrappedValue.upperBound
-        self.value.wrappedValue = lowerBound...upperBound
+        let lowerBound = min(newValue, self.value.upperBound)
+        let upperBound = self.value.upperBound
+        self.value = lowerBound...upperBound
         onEditingChanged(true)
     }
     
@@ -171,9 +171,9 @@ public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, Value
         let percent: CGFloat = min(value, proxy.size.width) / proxy.size.width
         let newValue = bounds.value(percent: percent)
         // 不小于小值 百分比
-        let upperBound = max(newValue, self.value.wrappedValue.lowerBound)
-        let lowerBound = self.value.wrappedValue.lowerBound
-        self.value.wrappedValue = lowerBound...upperBound
+        let upperBound = max(newValue, self.value.lowerBound)
+        let lowerBound = self.value.lowerBound
+        self.value = lowerBound...upperBound
         onEditingChanged(true)
     }
     
