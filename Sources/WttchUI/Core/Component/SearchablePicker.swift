@@ -45,8 +45,8 @@ public struct SearchablePicker<Content: View, Label: View>: View {
                 TextField(title, text: $searchText)
                     .textFieldStyle(.roundedBorder)
                     .focused($textFieldFocus)
+                    .disabled(!showPopover)
                     .onChange(of: textFieldFocus) { newValue in
-                        showPopover = newValue
                         searchCallback(searchText)
                     }
                 HStack {
@@ -61,6 +61,11 @@ public struct SearchablePicker<Content: View, Label: View>: View {
                 content
                     .padding()
             })
+        }
+        .background()
+        .onTapGesture {
+            showPopover = true
+            textFieldFocus = true
         }
         .onChange(of: searchText, perform: { newValue in
             searchTextPublisher.send(newValue)
