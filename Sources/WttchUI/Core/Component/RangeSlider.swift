@@ -10,6 +10,7 @@ import SwiftUI
 public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, ValueLabel : View, V: BinaryFloatingPoint, V.Stride: BinaryFloatingPoint {
     @Binding private var value: ClosedRange<V>
     private let bounds: ClosedRange<V>
+    private let step: V
     private let label: () -> Label
     private let minLabel: () -> ValueLabel
     private let maxLabel: () -> ValueLabel
@@ -35,6 +36,7 @@ public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, Value
     public init(
         value: Binding<ClosedRange<V>>,
         in bounds: ClosedRange<V> = 100...200,
+        step: V = 1,
         @ViewBuilder label: @escaping () -> Label,
         @ViewBuilder minimumValueLabel: @escaping () -> ValueLabel,
         @ViewBuilder maximumValueLabel: @escaping () -> ValueLabel,
@@ -42,6 +44,7 @@ public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, Value
     ) {
         self._value = value
         self.bounds = bounds
+        self.step = step
         
         self.label = label
         self.minLabel = minimumValueLabel
@@ -90,8 +93,10 @@ public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, Value
             .onTapGesture(
                 coordinateSpace: .named(axleCoordinateSpaceName),
                 perform: { value in
-                    let lower = min(self.value.lowerBound, bounds.value(percent: value.x / proxy.size.width))
-                    let upper = max(self.value.upperBound, bounds.value(percent: value.x / proxy.size.width))
+                    var lower = min(self.value.lowerBound, bounds.value(percent: value.x / proxy.size.width))
+                    lower = round(lower / step) * step
+                    var upper = max(self.value.upperBound, bounds.value(percent: value.x / proxy.size.width))
+                    upper = round(upper / step) * step
                     self.value = lower...upper
             })
     }
@@ -156,8 +161,8 @@ public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, Value
         let percent: CGFloat = max(value, 0) / proxy.size.width
         let newValue = bounds.value(percent: percent)
         // 不能超过大值 百分比
-        let lowerBound = min(newValue, self.value.upperBound)
-        let upperBound = self.value.upperBound
+        let lowerBound = round(min(newValue, self.value.upperBound) / step) * step
+        let upperBound = round(self.value.upperBound / step) * step
         self.value = lowerBound...upperBound
         onEditingChanged(true)
     }
@@ -171,8 +176,8 @@ public struct RangeSlider<Label, ValueLabel, V> : View where Label : View, Value
         let percent: CGFloat = min(value, proxy.size.width) / proxy.size.width
         let newValue = bounds.value(percent: percent)
         // 不小于小值 百分比
-        let upperBound = max(newValue, self.value.lowerBound)
-        let lowerBound = self.value.lowerBound
+        let upperBound = round(max(newValue, self.value.lowerBound) / step) * step
+        let lowerBound = round(self.value.lowerBound / step) * step
         self.value = lowerBound...upperBound
         onEditingChanged(true)
     }
@@ -302,10 +307,22 @@ struct RangeSlider_Preview: PreviewProvider {
                         })
                     Text("\(Int(rangedValue.upperBound))")
                 }
-
+                
                 RangeSlider(
                     value: $rangedValue,
                     in: 2000...12000,
+                    label: {
+                        Text("Label")
+                    }, minimumValueLabel: {
+                        Text("\(Int(rangedValue.lowerBound))")
+                    }, maximumValueLabel: {
+                        Text("\(Int(rangedValue.upperBound))")
+                    })
+                
+                RangeSlider(
+                    value: $rangedValue,
+                    in: 2000...12000,
+                    step: 100,
                     label: {
                         Text("Label")
                     }, minimumValueLabel: {
